@@ -29,7 +29,7 @@ I set up MongoDB database in Ubunto instance and created a bridge connecting my 
 
 THE STATISTICAL PART IN PARTICULAR:
 
-GARCH,
+GARCH Model,
 I calculated the daily returns of the stock investment based on the percentage of the close price changes
 The pct_change method will automatically calculate the percentage changes of the current day’s close price compared with the previous day. Please note the percentage changes can be either positive or negative depending on the direction of the price changes. The resulting percentage changes are stored in the dataframe new column, “Return”.
 I plotted a line chart to visualize the daily returns over time.
@@ -56,6 +56,92 @@ In order to gain a better picture of how accurate our GARCH model in predicting 
 I consider the result not accurate enought due to the high volatility.
 
 
-ARIMA,
+ARIMA Model,
+A time series can be broken down into 3 components.
+
+Trend: Upward & downward movement of the data with time over a large period of time (i.e. house appreciation)
+Seasonality: Seasonal variance (i.e. an increase in demand for ice cream during summer)
+Noise: Spikes & troughs at random intervals
+
+Before applying any statistical model on a time series, I wanted to ensure it’s stationary:
+The mean of the series should not increase over time.
+The variance of the series should not be a function of time. This property is known as homoscedasticity.
+Finally, the covariance of the ith term of the (i+m)th term should not be a function of time.
+The three of them should be constant with the time to get the timeseries stationary.
+
+There are two primary way to determine whether a given time series is stationary:
+- Rolling Statistics: Plot the rolling mean and rolling standard deviation. The time series is stationary if they remain constant with time (with the naked eye look to see if the lines are straight and parallel to the x-axis).
+- Augmented Dickey-Fuller Test: The time series is considered stationary if the p-value is low (according to the null hypothesis) and the critical values at 1%, 5%, 10% confidence intervals are as close as possible to the ADF Statistics.
+
+I calculated than the Rolling Mean and Rolling Standard Deviation (Window = 12) on the close prices of the cryptos and I plotted them. I demonstrated that they are not stationary since they increase and decreas over time.
+
+Afterwards I plotted the ADF Statistic. The three cryptos were far from the critical values and the p-value is greater than the threshold (0.05). Thus, we can conclude that the time series is not stationary.
+get_stationarity is a function that compute and plot what I said so far all in once.
+
+There are multiple transformations that I could have applied to a time series to render it stationary:
+First step has been computing the log of the dependent variable that is as simple way of lowering the rate at which rolling mean increases.
+I tried to transform the datas to get a good p value:
+I subtracted the rolling mean.
+I applied exponential decay.
+I applied the time shifting, I subtracted every the point by the one that preceded it (null, (x1−x0), (x2−x1), (x3−x2), (x4−x3), …, (xn−xn−1))
+
+I plotted all the three transformations using get_stationary function.
+The one that performed better fot the three cryptos is the exponential decay: infact the p value was under the limit (< 0,05) and the the critical values at 1%, 5%, 10% confidence intervals were the closest to the ADF statistics.
+
+*
+AutoRegressive Model (AR)
+Autoregressive models operate under the premise that past values have an effect on current values. AR models are commonly used in analyzing nature, economics, and other time-varying processes. As long as the assumption holds, we can build a linear regression model that attempts to predict value of a dependent variable today, given the values it had on previous days.
+The order of the AR model corresponds to the number of days incorporated in the formula.
+
+Moving Average Model (MA)
+Assumes the value of the dependent variable on the current day depends on the previous days error terms.
+Xt = μ+εt+θ1εt−1+...+θqεt−q
+where μ is the mean of the series, the θ1, …, θq are the parameters of the model and the εt, εt−1,…, εt−q are white noise error terms. The value of q is called the order of the MA model.
+
+Auto Regressive Moving Average (ARMA)
+The ARMA model is simply the combination of the AR and MA models.
+
+AutoRegressive Integrated Moving Average Model (ARIMA)
+The ARIMA (aka Box-Jenkins) model adds differencing to an ARMA model. Differencing subtracts the current value from the previous and can be used to transform a time series into one that’s stationary.
+*
+
+Three integers (p, d, q) are typically used to parametrize ARIMA models.
+
+p: number of autoregressive terms (AR order)
+d: number of nonseasonal differences (differencing order)
+q: number of moving-average terms (MA order)
+I created and fitted an ARIMA model with AR of order 2, differencing of order 1 and MA of order 2.
+Then, I could see how the model compares to the original time series.
+
+Given that we have data going for every day going back 3 years and want to forecast the close prices for the next 2 years.
+"results.plot_predict(1,1750)"
+
+In the case of the ARIMA model, I found the case closest to stationarity with exponential decay.
+In any case, this is not enough to make an adequate prediction; in fact, the prediction is by no means reliable as there are too many variables influencing the trend of cryptocurrencies
 
 
+Z Score Model,
+Clean the dataframe to work with z score.
+function adder adds a certain number of columns
+function deleter deletes a certain number of columns
+function jump deletes a certain number of rows from the beginnng
+function ma calculate the moving average
+function volatility calculate the volatility
+
+function z-score indicator helped me to compute the z score value.
+
+The Z-score measures the current analyzed value relative to its mean in terms of how many standard deviation away. The Z-score is easily interpreted this way:
+
+If the Z-score is 0, it indicates that the data point’s score is the same as the mean’s score.
+If the Z-score is 1.0 would indicate a value that is one standard deviation above the mean.
+If the Z-score is -1.0 would indicate a value that is one standard deviation below the mean.
+To calculate the Z-score, we must use the below formula:
+z = (x-μ)/σ
+
+Afterwards I calculated the 21 period Z-score putting as lower barrier -2 and as upper barrier +2
+I found several points corresponding to dates and I created a dataframe with index, date and z-score
+
+I scraped data from twitter. Each tweet corresponding to the days of the Z-score analysis. 
+I put everything into a dataframe to test my hypothesis.
+
+It turned out that there is not too much correlation between tweets and cryptocurrency rises/falls; perhaps it is when the trend rises that something can be predicted in terms of tweets in the days before the rise
